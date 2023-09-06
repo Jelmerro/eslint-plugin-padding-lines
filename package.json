@@ -1,0 +1,12 @@
+{
+    "name": "eslint-plugin-padding-lines",
+    "version": "0.1.0",
+    "description": "All the Eslint newline padding rules in one plugin",
+    "main": "index.js",
+    "repository": "https://github.com/Jelmerro/eslint-plugin-padding-lines",
+    "keywords": [
+        "eslint"
+    ],
+    "author": "Jelmer van Arnhem",
+    "license": "MIT"
+}
