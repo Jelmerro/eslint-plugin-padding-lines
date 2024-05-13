@@ -40,7 +40,7 @@ This rule controls the padding between any statements.
 Custom configuration of `statements` is exactly the same as the `padding-line-between-statements` Eslint rule,
 for which you can find the [documentation here](https://eslint.org/docs/latest/rules/padding-line-between-statements).
 The major difference is that this package supports arrow functions using `arrow`,
-while Eslint [refuses to add that](https://github.com/eslint/eslint/pull/16970) as they hate stylistic rules.
+while Eslint [refused to add it](https://github.com/eslint/eslint/pull/16970) as they have deprecated stylistic rules.
 
 Since by default this rule disallows any padding newline, you probably want to configure it.
 Personally I like to use something like this to control the padding newlines:
@@ -100,7 +100,7 @@ Personally I like to use something like this to control the padding newlines:
                 ]
             },
             {
-                "blankLine": "any",
+                "blankLine": "always",
                 "next": [
                     "export",
                     "cjs-export"
@@ -108,18 +108,7 @@ Personally I like to use something like this to control the padding newlines:
                 "prev": "*"
             },
             {
-                "blankLine": "never",
-                "next": [
-                    "import",
-                    "cjs-import"
-                ],
-                "prev": [
-                    "import",
-                    "cjs-import"
-                ]
-            },
-            {
-                "blankLine": "never",
+                "blankLine": "always",
                 "next": [
                     "export",
                     "cjs-export"
@@ -147,8 +136,7 @@ by default set to `never`, so you can choose to make it always with:
 }
 ```
 
-Since Eslint hate stylistic rules nowadays for whatever reason,
-this was [rejected](https://github.com/eslint/eslint/issues/12948) from addition to main Eslint.
+Since Eslint have deprecated stylistic rules so this was [rejected](https://github.com/eslint/eslint/issues/12948) from addition.
 
 # LICENSE
 
