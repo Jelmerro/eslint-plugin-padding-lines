@@ -1,8 +1,7 @@
-"use strict"
+export const LINEBREAKS = new Set(["\r\n", "\r", "\n", "\u2028", "\u2029"])
 
-const LINEBREAKS = new Set(["\r\n", "\r", "\n", "\u2028", "\u2029"])
-const STATEMENT_LIST_PARENTS = new Set(
-    ["Program", "BlockStatement", "StaticBlock", "SwitchCase"]
+export const STATEMENT_LIST_PARENTS = new Set(
+    ["BlockStatement", "Program", "StaticBlock", "SwitchCase"]
 )
 const anyFunctionPattern = /^(?:Function(?:Declaration|Expression)|ArrowFunctionExpression)$/u
 
@@ -16,15 +15,16 @@ const anyFunctionPattern = /^(?:Function(?:Declaration|Expression)|ArrowFunction
  * @param {ASTNode|null} node - A node to check.
  * @returns {boolean} `true` if the node is a function node.
  */
-const isFunction = node => Boolean(node && anyFunctionPattern.test(node.type))
+export const isFunction = node => Boolean(
+    node && anyFunctionPattern.test(node.type))
+
 /**
  * Retrieve `expression` value if the given node a `ChainExpression` node.
  * Otherwise, pass through it.
  * @param {ASTNode} node - The node to address.
  * @returns {ASTNode} The node or the sub-expression.
  */
-
-const skipChainExpression = node => {
+export const skipChainExpression = node => {
     if (node && node.type === "ChainExpression") {
         return node.expression
     }
@@ -36,7 +36,7 @@ const skipChainExpression = node => {
  * @param {Token} token - The token to check.
  * @returns {boolean} `true` if the token is a semicolon token.
  */
-const isSemicolonToken = token => token.value === ";"
+export const isSemicolonToken = token => token.value === ";"
     && token.type === "Punctuator"
 
 /**
@@ -44,14 +44,14 @@ const isSemicolonToken = token => token.value === ";"
  * @param {Token} token - The token to check.
  * @returns {boolean} `true` if the token is a semicolon token.
  */
-const isNotSemicolonToken = token => !isSemicolonToken(token)
+export const isNotSemicolonToken = token => !isSemicolonToken(token)
 
 /**
  * Checks if the given token is a closing brace token or not.
  * @param {Token} token - The token to check.
  * @returns {boolean} `true` if the token is a closing brace token.
  */
-const isClosingBraceToken = token => token.value === "}"
+export const isClosingBraceToken = token => token.value === "}"
     && token.type === "Punctuator"
 
 /**
@@ -61,7 +61,7 @@ const isClosingBraceToken = token => token.value === "}"
  * @returns {boolean} True if the node is parenthesised.
  * @private
  */
-const isParenthesised = (sourceCode, node) => {
+export const isParenthesised = (sourceCode, node) => {
     const previousToken = sourceCode.getTokenBefore(node)
     const nextToken = sourceCode.getTokenAfter(node)
     return Boolean(previousToken && nextToken)
@@ -77,7 +77,7 @@ const isParenthesised = (sourceCode, node) => {
  * @returns {boolean} Whether or not the tokens are on the same line.
  * @public
  */
-const isTokenOnSameLine = (
+export const isTokenOnSameLine = (
     left, right) => left.loc.end.line === right.loc.start.line
 
 /**
@@ -87,7 +87,7 @@ const isTokenOnSameLine = (
  * @param {Token} second - The second token.
  * @returns {boolean} True if there is at least a line between the tokens.
  */
-const isPaddingBetweenTokens = (sourceCode, first, second) => {
+export const isPaddingBetweenTokens = (sourceCode, first, second) => {
     const comments = sourceCode.getCommentsBefore(second)
     const len = comments.length
     // If there is no comments
@@ -128,17 +128,4 @@ const isPaddingBetweenTokens = (sourceCode, first, second) => {
     }
     const linesBetweenFstAndSnd = second.loc.start.line - first.loc.end.line - 1
     return linesBetweenFstAndSnd - sumOfCommentLines >= 1
-}
-
-module.exports = {
-    LINEBREAKS,
-    STATEMENT_LIST_PARENTS,
-    isClosingBraceToken,
-    isFunction,
-    isNotSemicolonToken,
-    isPaddingBetweenTokens,
-    isParenthesised,
-    isSemicolonToken,
-    isTokenOnSameLine,
-    skipChainExpression
 }

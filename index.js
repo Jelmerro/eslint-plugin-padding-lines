@@ -1,8 +1,17 @@
-"use strict"
+import {
+    isClosingBraceToken,
+    isFunction,
+    isNotSemicolonToken,
+    isPaddingBetweenTokens,
+    isParenthesised,
+    isSemicolonToken,
+    isTokenOnSameLine,
+    LINEBREAKS,
+    skipChainExpression,
+    STATEMENT_LIST_PARENTS
+} from "./util.js"
 
-const astUtils = require("./util")
-
-const LT = `[${Array.from(astUtils.LINEBREAKS).join("")}]`
+const LT = `[${Array.from(LINEBREAKS).join("")}]`
 const PADDING_LINE_SEQUENCE = new RegExp(
     String.raw`^(\s*?${LT})\s*${LT}(\s*;?)$`, "u")
 const CJS_EXPORT = /^(?:module\s*\.\s*)?exports(?:\s*\.|\s*\[|$)/u
@@ -59,12 +68,11 @@ const newNodeTypeTester = type => ({"test": node => node.type === type})
  */
 const isIIFEStatement = node => {
     if (node.type === "ExpressionStatement") {
-        let call = astUtils.skipChainExpression(node.expression)
+        let call = skipChainExpression(node.expression)
         if (call.type === "UnaryExpression") {
-            call = astUtils.skipChainExpression(call.argument)
+            call = skipChainExpression(call.argument)
         }
-        return call.type === "CallExpression"
-            && astUtils.isFunction(call.callee)
+        return call.type === "CallExpression" && isFunction(call.callee)
     }
     return false
 }
@@ -91,10 +99,9 @@ const isBlockLikeStatement = (sourceCode, node) => {
         return true
     }
     // Checks the last token is a closing brace of blocks.
-    const lastToken = sourceCode.getLastToken(
-        node, astUtils.isNotSemicolonToken)
+    const lastToken = sourceCode.getLastToken(node, isNotSemicolonToken)
     let belongingNode = null
-    if (lastToken && astUtils.isClosingBraceToken(lastToken)) {
+    if (lastToken && isClosingBraceToken(lastToken)) {
         belongingNode = sourceCode.getNodeByRangeIndex(lastToken.range[0])
     }
     return Boolean(belongingNode) && (
@@ -129,10 +136,10 @@ const isArrowFuntion = node => {
  */
 const isDirective = (node, sourceCode) => node.type === "ExpressionStatement"
     && (node.parent.type === "Program" || node.parent.type === "BlockStatement"
-        && astUtils.isFunction(node.parent.parent))
+        && isFunction(node.parent.parent))
     && node.expression.type === "Literal"
     && typeof node.expression.value === "string"
-    && !astUtils.isParenthesised(sourceCode, node.expression)
+    && !isParenthesised(sourceCode, node.expression)
 
 
 /**
@@ -177,7 +184,7 @@ const getActualLastToken = (sourceCode, node) => {
         prevToken
         && nextToken
         && prevToken.range[0] >= node.range[0]
-        && astUtils.isSemicolonToken(semiToken)
+        && isSemicolonToken(semiToken)
         && semiToken.loc.start.line !== prevToken.loc.end.line
         && semiToken.loc.end.line === nextToken.loc.start.line
     )
@@ -287,7 +294,7 @@ const verifyForAlways = (context, prevNode, nextNode, paddingLines) => {
                      * @private
                      */
                     "filter": token => {
-                        if (astUtils.isTokenOnSameLine(prevToken, token)) {
+                        if (isTokenOnSameLine(prevToken, token)) {
                             prevToken = token
                             return false
                         }
@@ -297,7 +304,7 @@ const verifyForAlways = (context, prevNode, nextNode, paddingLines) => {
                 }
             ) || nextNode
             let insertText = "\n"
-            if (astUtils.isTokenOnSameLine(prevToken, nextToken)) {
+            if (isTokenOnSameLine(prevToken, nextToken)) {
                 insertText += "\n"
             }
             return fixer.insertTextAfter(prevToken, insertText)
@@ -497,7 +504,7 @@ const statementsRule = {
         const verify = node => {
             const parentType = node.parent.type
             const validParent
-                = astUtils.STATEMENT_LIST_PARENTS.has(parentType)
+                = STATEMENT_LIST_PARENTS.has(parentType)
                 || parentType === "SwitchStatement"
             if (!validParent) {
                 return
@@ -596,7 +603,7 @@ const objectsRule = {
          * @param {"normal"|"first"} position - The position inside the object.
          */
         const reportTwoTokens = (token1, token2, node, position = "normal") => {
-            const isPadded = astUtils.isPaddingBetweenTokens(
+            const isPadded = isPaddingBetweenTokens(
                 sourceCode, token1, token2)
             let messageId = "always"
             if (isPadded) {
@@ -685,7 +692,7 @@ const objectsRule = {
     }
 }
 
-module.exports = {
+export default {
     "rules": {
         "objects": objectsRule,
         "statements": statementsRule

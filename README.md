@@ -1,9 +1,9 @@
 eslint-plugin-padding-lines
 ===========================
 
-### All the Eslint newline padding rules in one plugin
+All the Eslint newline padding rules in one plugin
 
-# Installation
+## Install
 
 Install the package (either in `~` or in your project dir) using:
 
@@ -27,7 +27,7 @@ That's it!
 
 (That is, if you don't want newlines anywhere, keep reading for configuration)
 
-# Why
+## Why
 
 I wanted to also control padding newlines between arrow functions definitions,
 and to control the padding newlines between objects (which are not statements in [Espree AST](https://github.com/eslint/espree)).
@@ -135,18 +135,3 @@ by default set to `never`, so you can choose to make it always with:
     }
 }
 ```
-
-Since Eslint have deprecated stylistic rules so this was [rejected](https://github.com/eslint/eslint/issues/12948) from addition.
-
-# LICENSE
-
-This package is based on a lot of different sources and refined to work properly,
-all of which are licensed under the MIT license, as which I also pulish my modifications to it.
-For exact author information, please refer to the LICENSE.
-Special thanks to:
-
-- [DockYard](https://github.com/DockYard/eslint-plugin-ember-suave/) for creating the object padding rule
-- [Bavly Abdelmasih](https://github.com/eslint/eslint/pull/16970) for adding the arrow option to the existing rule
-
-While their code has been rewritten to solve some code and stylistic issues,
-without them this package would probably not exist.
