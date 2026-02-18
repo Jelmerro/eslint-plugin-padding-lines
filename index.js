@@ -11,7 +11,7 @@ import {
     STATEMENT_LIST_PARENTS
 } from "./util.js"
 
-const LT = `[${Array.from(LINEBREAKS).join("")}]`
+const LT = `[${[...LINEBREAKS].join("")}]`
 const PADDING_LINE_SEQUENCE = new RegExp(
     String.raw`^(\s*?${LT})\s*${LT}(\s*;?)$`, "u")
 const CJS_EXPORT = /^(?:module\s*\.\s*)?exports(?:\s*\.|\s*\[|$)/u
@@ -238,7 +238,7 @@ const verifyForNever = (context, _, nextNode, paddingLines) => {
             const [[prevToken, nextToken]] = paddingLines
             const [, start] = prevToken.range
             const [end] = nextToken.range
-            const text = context.getSourceCode().text
+            const text = context.sourceCode.text
                 .slice(start, end)
                 .replace(PADDING_LINE_SEQUENCE, replacerToRemovePaddingLines)
             return fixer.replaceTextRange([start, end], text)
@@ -267,7 +267,7 @@ const verifyForAlways = (context, prevNode, nextNode, paddingLines) => {
     }
     context.report({
         "fix": fixer => {
-            const sourceCode = context.getSourceCode()
+            const {sourceCode} = context
             let prevToken = getActualLastToken(sourceCode, prevNode)
             const nextToken = sourceCode.getFirstTokenBetween(
                 prevToken,
@@ -405,7 +405,7 @@ const StatementTypes = {
 /** @type {import('../shared/types').Rule} */
 const statementsRule = {
     "create": context => {
-        const sourceCode = context.getSourceCode()
+        const {sourceCode} = context
         const configureList = context.options || []
         let scopeInfo = null
 
@@ -593,7 +593,7 @@ const statementsRule = {
 const objectsRule = {
     "create": context => {
         const config = context.options[0] || "never"
-        const sourceCode = context.getSourceCode()
+        const {sourceCode} = context
 
         /**
          * Check for padding between two tokens and report/fix if incorrect.
@@ -658,10 +658,10 @@ const objectsRule = {
             }
             try {
                 const curLast = sourceCode.getLastToken(
-                    properties[properties.length - 1])
+                    properties.at(-1))
                 const afterLast = sourceCode.getTokenAfter(curLast)
                 reportTwoTokens(curLast, afterLast,
-                    properties[properties.length - 1])
+                    properties.at(-1))
             } catch {
                 // No lines before
             }
