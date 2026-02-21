@@ -12,5 +12,5 @@
     "license": "MIT",
     "author": "Jelmer van Arnhem",
     "type": "module",
-    "main": "index.js"
+    "main": "app/index.js"
 }

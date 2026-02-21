@@ -1,21 +1,89 @@
-import {
-    isClosingBraceToken,
-    isFunction,
-    isNotSemicolonToken,
-    isPaddingBetweenTokens,
-    isParenthesised,
-    isSemicolonToken,
-    isTokenOnSameLine,
-    LINEBREAKS,
-    skipChainExpression,
-    STATEMENT_LIST_PARENTS
-} from "./util.js"
-
+const LINEBREAKS = new Set(["\r\n", "\r", "\n", "\u2028", "\u2029"])
 const LT = `[${[...LINEBREAKS].join("")}]`
 const PADDING_LINE_SEQUENCE = new RegExp(
     String.raw`^(\s*?${LT})\s*${LT}(\s*;?)$`, "u")
 const CJS_EXPORT = /^(?:module\s*\.\s*)?exports(?:\s*\.|\s*\[|$)/u
 const CJS_IMPORT = /^require\(/u
+
+const STATEMENT_LIST_PARENTS = new Set(
+    ["BlockStatement", "Program", "StaticBlock", "SwitchCase"]
+)
+const anyFunctionPattern = /^(?:Function(?:Declaration|Expression)|ArrowFunctionExpression)$/u
+
+/**
+ * Retrieve `expression` value if the given node a `ChainExpression` node.
+ * Otherwise, pass through it.
+ * @param {ASTNode} node - The node to address.
+ * @returns {ASTNode} The node or the sub-expression.
+ */
+const skipChainExpression = node => {
+    if (node && node.type === "ChainExpression") {
+        return node.expression
+    }
+    return node
+}
+
+/**
+ * Checks if the given token is a semicolon token or not.
+ * @param {Token} token - The token to check.
+ * @returns {boolean} `true` if the token is a semicolon token.
+ */
+const isSemicolonToken = token => token.value === ";"
+    && token.type === "Punctuator"
+
+/**
+ * Checks if the given token is a semicolon token or not.
+ * @param {Token} token - The token to check.
+ * @returns {boolean} `true` if the token is a semicolon token.
+ */
+const isNotSemicolonToken = token => !isSemicolonToken(token)
+
+/**
+ * Checks if the given token is a closing brace token or not.
+ * @param {Token} token - The token to check.
+ * @returns {boolean} `true` if the token is a closing brace token.
+ */
+const isClosingBraceToken = token => token.value === "}"
+    && token.type === "Punctuator"
+
+/**
+ * Determines if a node is surrounded by parentheses.
+ * @param {SourceCode} sourceCode - The ESLint source code object.
+ * @param {ASTNode} node - The node to be checked.
+ * @returns {boolean} True if the node is parenthesised.
+ * @private
+ */
+const isParenthesised = (sourceCode, node) => {
+    const previousToken = sourceCode.getTokenBefore(node)
+    const nextToken = sourceCode.getTokenAfter(node)
+    return Boolean(previousToken && nextToken)
+        && previousToken.value === "("
+        && previousToken.range[1] <= node.range[0]
+        && nextToken.value === ")" && nextToken.range[0] >= node.range[1]
+}
+
+/**
+ * Determines whether two adjacent tokens are on the same line.
+ * @param {object} left - The left token object.
+ * @param {object} right - The right token object.
+ * @returns {boolean} Whether or not the tokens are on the same line.
+ * @public
+ */
+const isTokenOnSameLine = (
+    left, right) => left.loc.end.line === right.loc.start.line
+
+/**
+ * Checks whether a given node is a function node or not.
+ * The following types are function nodes:
+ *
+ * - ArrowFunctionExpression
+ * - FunctionDeclaration
+ * - FunctionExpression.
+ * @param {ASTNode|null} node - A node to check.
+ * @returns {boolean} `true` if the node is a function node.
+ */
+const isFunction = node => Boolean(
+    node && anyFunctionPattern.test(node.type))
 
 /**
  * Creates tester which check if a node starts with specific keyword.
@@ -403,7 +471,7 @@ const StatementTypes = {
     "with": newKeywordTester("with")
 }
 /** @type {import('../shared/types').Rule} */
-const statementsRule = {
+export default {
     "create": context => {
         const {sourceCode} = context
         const configureList = context.options || []
@@ -547,10 +615,11 @@ const statementsRule = {
         }
     },
     "meta": {
+        "deprecated": true,
         "docs": {
             "category": "Stylistic Issues",
             "description": "Control padding lines between statements",
-            "recommended": true,
+            "recommended": false,
             "url": "https://github.com/Jelmerro/eslint-plugin-padding-lines"
         },
         "fixable": "whitespace",
@@ -588,113 +657,5 @@ const statementsRule = {
             "type": "array"
         },
         "type": "layout"
-    }
-}
-const objectsRule = {
-    "create": context => {
-        const config = context.options[0] || "never"
-        const {sourceCode} = context
-
-        /**
-         * Check for padding between two tokens and report/fix if incorrect.
-         * @param {object} token1 - The first token.
-         * @param {object} token2 - The second token.
-         * @param {ASTNode} node - The node that's being checked.
-         * @param {"normal"|"first"} position - The position inside the object.
-         */
-        const reportTwoTokens = (token1, token2, node, position = "normal") => {
-            const isPadded = isPaddingBetweenTokens(
-                sourceCode, token1, token2)
-            let messageId = "always"
-            if (isPadded) {
-                messageId = "never"
-            }
-            if (config === "always" && !isPadded
-                || config === "never" && isPadded) {
-                context.report({
-                    "fix": fixer => {
-                        const tokenAfterLastToken = sourceCode
-                            .getTokenAfter(token1)
-                        let tokenToLineBreakAfter = token1
-                        if (tokenAfterLastToken.value === ",") {
-                            tokenToLineBreakAfter = tokenAfterLastToken
-                        }
-                        if (isPadded) {
-                            if (position === "normal") {
-                                return fixer.replaceTextRange([token1.range[1],
-                                    token2.range[0]], ",\n")
-                            }
-                            if (position === "first") {
-                                return fixer.replaceTextRange([token1.range[1],
-                                    token2.range[0]], "\n")
-                            }
-                        }
-                        return fixer.insertTextAfter(
-                            tokenToLineBreakAfter, "\n")
-                    },
-                    messageId,
-                    node
-                })
-            }
-        }
-
-        /**
-         * Handles the lines between object expresions.
-         * @param {ASTNode} node - The node to be checked.
-         */
-        const objectExpression = node => {
-            const {properties} = node
-            try {
-                const curFirst = sourceCode.getFirstToken(properties[0])
-                const beforeFirst = sourceCode.getTokenBefore(curFirst)
-                reportTwoTokens(beforeFirst, curFirst, properties[0], "first")
-            } catch {
-                // No lines before
-            }
-            for (let i = 0; i < properties.length - 1; i++) {
-                const curLast = sourceCode.getLastToken(properties[i])
-                const nextFirst = sourceCode.getFirstToken(properties[i + 1])
-                reportTwoTokens(curLast, nextFirst, properties[i + 1])
-            }
-            try {
-                const curLast = sourceCode.getLastToken(
-                    properties.at(-1))
-                const afterLast = sourceCode.getTokenAfter(curLast)
-                reportTwoTokens(curLast, afterLast,
-                    properties.at(-1))
-            } catch {
-                // No lines before
-            }
-        }
-
-        return {"ObjectExpression": objectExpression}
-    },
-    "meta": {
-        "docs": {
-            "category": "Stylistic Issues",
-            "description": "Control padding lines between objects",
-            "recommended": true,
-            "url": "https://github.com/Jelmerro/eslint-plugin-padding-lines"
-        },
-        "fixable": "whitespace",
-        "messages": {
-            "always": "Expected blank line between object props.",
-            "never": "Unexpected blank line between object props."
-        },
-        "schema": [
-            {"enum": ["always", "never"]},
-            {
-                "additionalProperties": false,
-                "type": "object"
-            }
-        ],
-        "type": "layout"
-    }
-}
-
-export default {
-    "rules": {
-        "objects": objectsRule,
-        "statements": statementsRule
     }
 }
