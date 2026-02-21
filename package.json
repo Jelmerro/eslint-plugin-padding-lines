@@ -12,5 +12,17 @@
     "license": "MIT",
     "author": "Jelmer van Arnhem",
     "type": "module",
-    "main": "app/index.js"
+    "main": "app/index.js",
+    "scripts": {
+        "tsc": "tsc",
+        "update": "npx -y jelmerro/nus"
+    },
+    "devDependencies": {
+        "@types/estree": "1.0.8",
+        "eslint": "10.0.1",
+        "type-config": "github:jelmerro/type-config"
+    },
+    "peerDependencies": {
+        "eslint": "^9 || ^10"
+    }
 }

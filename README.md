@@ -5,8 +5,6 @@ All the Eslint newline padding rules in one plugin
 
 ## Install
 
-Install the package (either in `~` or in your project dir) using:
-
 `npm i -D Jelmerro/eslint-plugin-padding-lines`
 
 Add `padding-lines` to your Eslint config:

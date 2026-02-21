@@ -1,12 +1,10 @@
-import {createNewLineReporter} from '../util.js'
+import {createNewLineReporter} from "../util.js"
 
-/** @type {import('../shared/types').Rule} */
+/** @type {import('eslint').Rule.RuleModule} */
 export default {
-    "create": context => createNewLineReporter(
-        "elements", "ArrayExpression", context),
+    "create": context => createNewLineReporter("ArrayExpression", context),
     "meta": {
         "docs": {
-            "category": "Stylistic Issues",
             "description": "Control padding lines between arrays",
             "recommended": true,
             "url": "https://github.com/Jelmerro/eslint-plugin-padding-lines"

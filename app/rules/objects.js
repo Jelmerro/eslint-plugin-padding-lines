@@ -1,12 +1,10 @@
-import {createNewLineReporter} from '../util.js'
+import {createNewLineReporter} from "../util.js"
 
-/** @type {import('../shared/types').Rule} */
+/** @type {import('eslint').Rule.RuleModule} */
 export default {
-    "create": context => createNewLineReporter(
-        "properties", "ObjectExpression", context),
+    "create": context => createNewLineReporter("ObjectExpression", context),
     "meta": {
         "docs": {
-            "category": "Stylistic Issues",
             "description": "Control padding lines between objects",
             "recommended": true,
             "url": "https://github.com/Jelmerro/eslint-plugin-padding-lines"

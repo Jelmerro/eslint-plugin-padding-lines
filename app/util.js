@@ -1,8 +1,8 @@
 /**
  * Checks if there is padding between two tokens.
- * @param {SourceCode} sourceCode - The ESLint source code object.
- * @param {Token} first - The first token.
- * @param {Token} second - The second token.
+ * @param {import('eslint').SourceCode} sourceCode - The ESLint source code object.
+ * @param {import('eslint').AST.Token} first - The first token.
+ * @param {import('eslint').AST.Token} second - The second token.
  * @returns {boolean} True if there is at least a line between the tokens.
  */
 export const isPaddingBetweenTokens = (sourceCode, first, second) => {
@@ -18,30 +18,33 @@ export const isPaddingBetweenTokens = (sourceCode, first, second) => {
     let sumOfCommentLines = 0
     let prevCommentLineNum = -1
     for (let i = 0; i < len; i++) {
-        const commentLinesOfThisComment = comments[i].loc.end.line
-            - comments[i].loc.start.line + 1
+        const loc = comments[i]?.loc
+        if (!loc) {
+            continue
+        }
+        const commentLinesOfThisComment = loc.end.line - loc.start.line + 1
         sumOfCommentLines += commentLinesOfThisComment
         /*
          * If this comment and the previous comment are in the same line,
          * the count of comment lines is duplicated. So decrement once.
          */
-        if (prevCommentLineNum === comments[i].loc.start.line) {
+        if (prevCommentLineNum === loc.start.line) {
             sumOfCommentLines -= 1
         }
-        prevCommentLineNum = comments[i].loc.end.line
+        prevCommentLineNum = loc.end.line
     }
     /*
      * If the first block and the first comment are in the same line,
      * the count of comment lines is duplicated. So decrement sumOfCommentLines.
      */
-    if (first.loc.end.line === comments[0].loc.start.line) {
+    if (first.loc.end.line === comments[0].loc?.start.line) {
         sumOfCommentLines -= 1
     }
     /*
      * If the last comment and the second block are in the same line,
      * the count of comment lines is duplicated. So decrement sumOfCommentLines.
      */
-    if (comments[len - 1].loc.end.line === second.loc.start.line) {
+    if (comments[len - 1].loc?.end.line === second.loc.start.line) {
         sumOfCommentLines -= 1
     }
     const linesBetweenFstAndSnd = second.loc.start.line - first.loc.end.line - 1
@@ -50,18 +53,18 @@ export const isPaddingBetweenTokens = (sourceCode, first, second) => {
 
 /**
  * Create a newline reporter for either objects or arrays.
- * @param {"properties"|"elements"} nodelist
  * @param {"ObjectExpression"|"ArrayExpression"} expression
- * @param {object} context
+ * @param {import('eslint').Rule.RuleContext} context
+ * @returns {import('eslint').Rule.RuleListener}
  */
-export const createNewLineReporter = (nodelist, expression, context) => {
+export const createNewLineReporter = (expression, context) => {
     const config = context.options[0] || "never"
     const {sourceCode} = context
     /**
      * Check for padding between two tokens and report/fix if incorrect.
-     * @param {Token} token1 - The first token.
-     * @param {Token} token2 - The second token.
-     * @param {ASTNode} node - The node that's being checked.
+     * @param {import('eslint').AST.Token} token1 - The first token.
+     * @param {import('eslint').AST.Token} token2 - The second token.
+     * @param {import('eslint').AST.Token} node - The node that's being checked.
      * @param {"normal"|"first"} position - The position inside the object.
      */
     const reportTwoTokens = (token1, token2, node, position = "normal") => {
@@ -78,7 +81,7 @@ export const createNewLineReporter = (nodelist, expression, context) => {
                     const tokenAfterLastToken = sourceCode
                         .getTokenAfter(token1)
                     let tokenToLineBreakAfter = token1
-                    if (tokenAfterLastToken.value === ",") {
+                    if (tokenAfterLastToken?.value === ",") {
                         tokenToLineBreakAfter = tokenAfterLastToken
                     }
                     if (isPadded) {
@@ -102,10 +105,22 @@ export const createNewLineReporter = (nodelist, expression, context) => {
 
     /**
      * Handles the lines between object expresions.
-     * @param {ASTNode} node - The node to be checked.
+     * @param {import('estree').Expression} expression
      */
-    const expressionChecker = node => {
-        const props = node[nodelist]
+    const expressionChecker = expression => {
+        /** @type {(
+         *   import('estree').SpreadElement
+         *   |import('estree').Expression
+         *   |import('estree').Property
+         *   |null
+         * )[]} */
+        let props = []
+        if ("elements" in expression) {
+            props = expression.elements
+        }
+        if ("properties" in expression) {
+            props = expression.properties
+        }
         try {
             const curFirst = sourceCode.getFirstToken(props[0])
             const beforeFirst = sourceCode.getTokenBefore(curFirst)
@@ -119,16 +134,15 @@ export const createNewLineReporter = (nodelist, expression, context) => {
             reportTwoTokens(curLast, nextFirst, props[i + 1])
         }
         try {
-            const curLast = sourceCode.getLastToken(
-                props.at(-1))
+            const curLast = sourceCode.getLastToken(props.at(-1))
             const afterLast = sourceCode.getTokenAfter(curLast)
-            reportTwoTokens(curLast, afterLast,
-                props.at(-1))
+            reportTwoTokens(curLast, afterLast, props.at(-1))
         } catch {
             // No lines before
         }
     }
 
+    /** @type {import('eslint').Rule.RuleListener} */
     const rule = {}
     rule[expression] = expressionChecker
     return rule
