@@ -10,10 +10,12 @@ All the Eslint newline padding rules in one plugin
 Add `padding-lines` to your Eslint config:
 
 ```js
+import paddingLines from "eslint-plugin-padding-lines"
+
 export default {
-    "plugins": [
-        "padding-lines"
-    ],
+    "plugins": {
+        "padding-lines": paddingLines
+    },
     "rules": {
         "padding-lines/arrays": "error",
         "padding-lines/objects": "error",
