@@ -47,7 +47,7 @@ const isClosingBraceToken = token => token.value === "}"
 
 /**
  * Determines if a node is surrounded by parentheses.
- * @param {import('eslint').SourceCode} sourceCode - The ESLint source code object.
+ * @param {import('eslint').SourceCode} sourceCode - The source code object.
  * @param {import('estree').Node} node - The node to be checked.
  * @returns {boolean} True if the node is parenthesised.
  * @private
@@ -64,13 +64,13 @@ const isParenthesised = (sourceCode, node) => {
 
 /**
  * Determines whether two adjacent tokens are on the same line.
- * @param {import('eslint').AST.Token} left - The left token object.
- * @param {import('eslint').AST.Token} right - The right token object.
+ * @param {import('eslint').AST.Token|import('estree').Comment} left
+ * @param {import('eslint').AST.Token|import('estree').Comment} right
  * @returns {boolean} Whether or not the tokens are on the same line.
  * @public
  */
 const isTokenOnSameLine = (
-    left, right) => left.loc.end.line === right.loc.start.line
+    left, right) => left.loc?.end.line === right.loc?.start.line
 
 /**
  * Checks whether a given node is a function node or not.
@@ -148,7 +148,7 @@ const isIIFEStatement = node => {
 /**
  * Checks whether the given node is a block-like statement.
  * This checks the last token of the node is the closing brace of a block.
- * @param {import('eslint').SourceCode} sourceCode - The source code to get tokens.
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {import('estree').Node} node - The node to check.
  * @returns {boolean} `true` if the node is a block-like statement.
  * @private
@@ -199,7 +199,7 @@ const isArrowFuntion = node => {
 /**
  * Check whether the given node is a directive or not.
  * @param {import('estree').Node} node - The node to check.
- * @param {import('eslint').SourceCode} sourceCode - The source code object to get tokens.
+ * @param {import('eslint').SourceCode} sourceCode
  * @returns {boolean} `true` if the node is a directive.
  */
 const isDirective = (node, sourceCode) => node.type === "ExpressionStatement"
@@ -209,11 +209,10 @@ const isDirective = (node, sourceCode) => node.type === "ExpressionStatement"
     && typeof node.expression.value === "string"
     && !isParenthesised(sourceCode, node.expression)
 
-
 /**
  * Check whether the given node is a part of directive prologue or not.
- * @param {import('estree').Node} node - The node to check.
- * @param {import('eslint').SourceCode} sourceCode - The source code object to get tokens.
+ * @param {import('estree').Node} node
+ * @param {import('eslint').SourceCode} sourceCode
  * @returns {boolean} `true` if the node is a part of directive prologue.
  */
 const isDirectivePrologue = (node, sourceCode) => {
@@ -239,9 +238,9 @@ const isDirectivePrologue = (node, sourceCode) => {
  *
  *     foo()
  *     ;[1, 2, 3].forEach(bar).
- * @param {import('eslint').SourceCode} sourceCode - The source code to get tokens.
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {import('estree').Node} node - The node to get.
- * @returns {import('eslint').AST.Token} The last token base on sourceCode and node provided.
+ * @returns {import('eslint').AST.Token} The last token base on code and node.
  * @private
  */
 const getActualLastToken = (sourceCode, node) => {
@@ -275,22 +274,23 @@ const replacerToRemovePaddingLines = (
 
 /**
  * Check and report statements for `any` configuration.
- * It does nothing.
  * @returns {void}
  * @private
  */
-const verifyForAny = () => undefined
+const verifyForAny = () => {
+    // This does nothing, but the reporter needs a function to call.
+}
 
 /**
  * Check and report statements for `never` configuration.
  * This autofix removes blank lines between the given 2 statements.
  * However, if comments exist between 2 blank lines, it does not remove those
  * blank lines automatically.
- * @param {import('eslint').Rule.RuleContext} context - The rule context to report.
+ * @param {import('eslint').Rule.RuleContext} context
  * @param {import('estree').Node} _ - Unused. The previous node to check.
  * @param {import('estree').Node} nextNode - The next node to check.
- * @param {Array<import('eslint').AST.Token[]>} paddingLines - The array of token pairs that blank
- * lines exist between the pair.
+ * @param {Array<import('eslint').AST.Token[]>} paddingLines - The array of
+ * token pairs that blank lines exist between the pair.
  * @returns {void}
  * @private
  */
@@ -321,11 +321,11 @@ const verifyForNever = (context, _, nextNode, paddingLines) => {
  * This autofix inserts a blank line between the given 2 statements.
  * If the `prevNode` has trailing comments, it inserts a blank line after the
  * trailing comments.
- * @param {import('eslint').Rule.RuleContext} context - The rule context to report.
+ * @param {import('eslint').Rule.RuleContext} context
  * @param {import('estree').Node} prevNode - The previous node to check.
  * @param {import('estree').Node} nextNode - The next node to check.
- * @param {Array<import('eslint').AST.Token[]>} paddingLines - The array of token pairs that blank
- * lines exist between the pair.
+ * @param {Array<import('eslint').AST.Token[]>} paddingLines - The array of
+ * token pairs that blank lines exist between the pair.
  * @returns {void}
  * @private
  */
@@ -336,6 +336,7 @@ const verifyForAlways = (context, prevNode, nextNode, paddingLines) => {
     context.report({
         "fix": fixer => {
             const {sourceCode} = context
+            /** @type {import('eslint').AST.Token|import('estree').Comment} */
             let prevToken = getActualLastToken(sourceCode, prevNode)
             const nextToken = sourceCode.getFirstTokenBetween(
                 prevToken,
@@ -357,7 +358,7 @@ const verifyForAlways = (context, prevNode, nextNode, paddingLines) => {
                      *
                      *     // comment.
                      *     Bar();.
-                     * @param {import('eslint').AST.Token} token - The token to check.
+                     * @param {import('eslint').AST.Token|import('estree').Comment} token
                      * @returns {boolean} `true` if the comment is not trailing.
                      * @private
                      */
@@ -538,7 +539,7 @@ export default {
          * Comments are separators of the padding line sequences.
          * @param {import('estree').Node} prevNode - The previous statement to count.
          * @param {import('estree').Node} nextNode - The current statement to count.
-         * @returns {Array<Token[]>} The array of token pairs.
+         * @returns {Array<import('eslint').AST.Token[]>} The array of token pairs.
          * @private
          */
         const getPaddingLineSequences = (prevNode, nextNode) => {

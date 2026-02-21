@@ -1,6 +1,6 @@
 /**
  * Checks if there is padding between two tokens.
- * @param {import('eslint').SourceCode} sourceCode - The ESLint source code object.
+ * @param {import('eslint').SourceCode} sourceCode - The source code object.
  * @param {import('eslint').AST.Token} first - The first token.
  * @param {import('eslint').AST.Token} second - The second token.
  * @returns {boolean} True if there is at least a line between the tokens.
@@ -53,11 +53,11 @@ export const isPaddingBetweenTokens = (sourceCode, first, second) => {
 
 /**
  * Create a newline reporter for either objects or arrays.
- * @param {"ObjectExpression"|"ArrayExpression"} expression
+ * @param {"ObjectExpression"|"ArrayExpression"} expressionName
  * @param {import('eslint').Rule.RuleContext} context
  * @returns {import('eslint').Rule.RuleListener}
  */
-export const createNewLineReporter = (expression, context) => {
+export const createNewLineReporter = (expressionName, context) => {
     const config = context.options[0] || "never"
     const {sourceCode} = context
     /**
@@ -102,18 +102,19 @@ export const createNewLineReporter = (expression, context) => {
             })
         }
     }
-
     /**
      * Handles the lines between object expresions.
      * @param {import('estree').Expression} expression
      */
     const expressionChecker = expression => {
-        /** @type {(
+        /**
+         * @type {(
          *   import('estree').SpreadElement
          *   |import('estree').Expression
          *   |import('estree').Property
          *   |null
-         * )[]} */
+         * )[]}
+         */
         let props = []
         if ("elements" in expression) {
             props = expression.elements
@@ -141,9 +142,5 @@ export const createNewLineReporter = (expression, context) => {
             // No lines before
         }
     }
-
-    /** @type {import('eslint').Rule.RuleListener} */
-    const rule = {}
-    rule[expression] = expressionChecker
-    return rule
+    return {[expressionName]: expressionChecker}
 }
