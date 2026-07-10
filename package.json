@@ -5,24 +5,30 @@
     "keywords": [
         "eslint"
     ],
+    "homepage": "https://github.com/Jelmerro/eslint-plugin-padding-lines",
+    "bugs": "https://github.com/Jelmerro/eslint-plugin-padding-lines/issues/",
     "repository": {
         "url": "https://github.com/Jelmerro/eslint-plugin-padding-lines",
         "type": "git"
     },
+    "funding": "https://github.com/sponsors/Jelmerro/",
     "license": "MIT",
     "author": "Jelmer van Arnhem",
     "type": "module",
-    "main": "app/index.js",
+    "exports": "./app/index.js",
     "scripts": {
+        "eslint": "eslint",
+        "fix": "eslint --fix",
+        "lint": "npm run eslint && npm run tsc",
         "tsc": "tsc",
         "update": "npx -y jelmerro/nus"
     },
     "devDependencies": {
-        "@types/estree": "1.0.8",
-        "eslint": "10.0.1",
+        "@types/estree": "1.0.9",
+        "eslint-config": "github:Jelmerro/eslint-config",
         "type-config": "github:jelmerro/type-config"
     },
-    "peerDependencies": {
-        "eslint": "^9 || ^10"
+    "engines": {
+        "node": ">=16"
     }
 }
